@@ -267,7 +267,7 @@ sf::Vector2i getCursorFromIndex(int index) {
 int main()
 {
 
-    sf::View view(sf::FloatRect(0, 0, 640, 640));
+    sf::View view(sf::FloatRect(0, 0, 480, 640));
     window = new sf::RenderWindow(sf::VideoMode(view.getSize().x, view.getSize().y), "Easy Notepad!", sf::Style::Titlebar | sf::Style::Close);
 
     font.loadFromFile("arial.ttf");
