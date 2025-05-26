@@ -40,7 +40,6 @@ set(RELEASE_DLLS
 foreach(ASSET ${RELEASE_DLLS})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Release
-        # Teraz kopiuj plik do katalogu
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/EasyNotepad/${ASSET}
             ${CMAKE_BINARY_DIR}/Release
@@ -54,7 +53,6 @@ endforeach()
 foreach(ASSET ${DEBUG_DLLS})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Debug
-        # Teraz kopiuj plik do katalogu
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/EasyNotepad/${ASSET}
             ${CMAKE_BINARY_DIR}/Debug
