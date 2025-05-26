@@ -1,0 +1,84 @@
+# min version CMake
+cmake_minimum_required(VERSION 3.10)
+
+# project name
+project(EasyNotepad)
+
+# set the standard C++
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# add the executable
+add_executable(${PROJECT_NAME} EasyNotepad/main.cpp)
+
+# find SFML
+set(SFML_DIR "C:/SFML-2.6.2/lib/cmake/SFML")
+find_package(SFML 2.6.2 COMPONENTS graphics window system REQUIRED)
+
+# link SFML libraries
+target_link_libraries(${PROJECT_NAME} sfml-graphics sfml-window sfml-system)
+
+# copy files to projects folders
+
+set(ASSETS
+	arial.ttf
+)
+
+set(DEBUG_DLLS
+	libs/sfml-graphics-d-2.dll
+	libs/sfml-system-d-2.dll
+	libs/sfml-window-d-2.dll
+)
+
+set(RELEASE_DLLS
+	libs/sfml-graphics-2.dll
+	libs/sfml-system-2.dll
+	libs/sfml-window-2.dll
+)
+
+# copy files to Release 
+foreach(ASSET ${RELEASE_DLLS})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Release
+        # Teraz kopiuj plik do katalogu
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/EasyNotepad/${ASSET}
+            ${CMAKE_BINARY_DIR}/Release
+        COMMENT "Copying ${ASSET} to Release folder"
+        VERBATIM
+        CONFIGURATIONS Release
+    )
+endforeach()
+
+# copy files to Debug 
+foreach(ASSET ${DEBUG_DLLS})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Debug
+        # Teraz kopiuj plik do katalogu
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/EasyNotepad/${ASSET}
+            ${CMAKE_BINARY_DIR}/Debug
+        COMMENT "Copying ${ASSET} to Debug folder"
+        VERBATIM
+        CONFIGURATIONS Debug
+    )
+endforeach()
+
+# copy Assets
+foreach(ASSET ${ASSETS})
+    foreach(CONFIG_TYPE Debug Release)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${CMAKE_SOURCE_DIR}/EasyNotepad/${ASSET}
+                ${CMAKE_BINARY_DIR}/${CONFIG_TYPE}
+            COMMENT "Copying ${ASSET} to ${CONFIG_TYPE} folder"
+            VERBATIM
+            CONFIGURATIONS ${CONFIG_TYPE}
+        )
+    endforeach()
+endforeach()
+
+# set the Debugger Working Directory in Visual Studio (Debug/Release)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
+)
