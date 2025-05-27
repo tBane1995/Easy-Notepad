@@ -38,7 +38,7 @@ cmake ..
 cmake --build .
 `
 
-9. Plik wykonywalny znajdziesz w **build/Debug** lub **build/Release** i tam też należy przenieść pliki bibliotek **.dll** z folderu 
+9. Plik wykonywalny znajdziesz w **build/Debug** lub **build/Release**
 
 ## Technologie
 Program stworzono w języku C++ z wykorzystaniem biblioteki SFML 2.6.2.  

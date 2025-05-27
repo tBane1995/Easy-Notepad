@@ -4,12 +4,17 @@ cmake_minimum_required(VERSION 3.10)
 # project name
 project(EasyNotepad)
 
-# set the standard C++
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 # add the executable
 add_executable(${PROJECT_NAME} EasyNotepad/main.cpp)
+
+# set the standard C++ (after defining the target)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  CXX_STANDARD 17
+  CXX_STANDARD_REQUIRED ON
+)
+
+# compile features
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 
 # find SFML
 set(SFML_DIR "C:/SFML-2.6.2/lib/cmake/SFML")
@@ -18,8 +23,7 @@ find_package(SFML 2.6.2 COMPONENTS graphics window system REQUIRED)
 # link SFML libraries
 target_link_libraries(${PROJECT_NAME} sfml-graphics sfml-window sfml-system)
 
-# copy files to projects folders
-
+# copy files to project folders
 set(ASSETS
 	arial.ttf
 )
@@ -36,7 +40,7 @@ set(RELEASE_DLLS
 	libs/sfml-window-2.dll
 )
 
-# copy files to Release 
+# copy files to Release
 foreach(ASSET ${RELEASE_DLLS})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Release
@@ -49,7 +53,7 @@ foreach(ASSET ${RELEASE_DLLS})
     )
 endforeach()
 
-# copy files to Debug 
+# copy files to Debug
 foreach(ASSET ${DEBUG_DLLS})
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/Debug
