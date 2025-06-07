@@ -38,7 +38,7 @@ public:
 		logo_sprite.setOrigin(logo_texture.getSize().x/2, logo_texture.getSize().y/ 2);
 
 		font = sf::Font();
-		font.loadFromFile("arial.ttf");
+		font.loadFromFile("C:/Windows/Fonts/arial.ttf");
 		SFML = sf::Text(L"SFML", font, 224);
 		SFML.setOrigin(SFML.getGlobalBounds().width / 2, SFML.getGlobalBounds().height/2);
 		SFML.setScale(logo_scale, logo_scale);
