@@ -380,17 +380,8 @@ int main()
 
     font.loadFromFile("arial.ttf");
     characterSize = 17;
-    /*
-    text =
-        L"Gracz najpierw zagaduje handlarza gdyż ten jest najbliżej. Handlarz oferuje skórzane ubranie w zamian za dostarczenie kilku skór od myśliwego, "
-        L"którego gracz mijał wcześniej. Zielarka da graczowi trochę złota w zamian za przyniesienie kilku roślin leczniczych. "
-        L"U kowala gracz może zakupić oręż - zwyczajny prosty miecz gdyż jest to niewprawiony kowal w miecznictwie. "
-        L"Zaś do wieży mędrca nie da się dostać.Gracz rusza spowrotem do myśliwego po skóry, lecz ten jest nieufny, "
-        L"ale ostatecznie zgadza się i daje graczowi skóry.\n"
-        L"Gracz wraca ze skórami do handlarza i odbiera nowe ubranie \"skórzane kurtka\" oraz \"skórzane spodnie\"." 
-        L"Handlarz jednak jeszcze jedno zadanie ma dla gracza. Dostawa towarów ze wschodu się opóźnia i trzeba sprawdzić "
-        L"co się z nią stało i tak gracz rusza z kolejnym zadaniem \"spóźniona dostawa\".";
-    */
+    
+    text = L"";
 
     lines = wrapText(window->getSize().x);
 
