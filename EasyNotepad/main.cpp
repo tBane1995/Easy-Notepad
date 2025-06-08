@@ -326,6 +326,9 @@ int main()
                 text.insert(index, clip_text);
                 index += clip_text.size();
 
+                for (auto& line : lines)
+                    delete line;
+
                 lines = wrap_text(window->getSize().x, text);
                 cursorPosition = getCursorFromIndex(index);
                 setCursorPosition(cursorPosition);
@@ -335,6 +338,10 @@ int main()
                 int index = getCursorIndex(cursorPosition);
                 if (!text.empty()) {
                     text.erase(index, 1);
+
+                    for (auto& line : lines)
+                        delete line;
+
                     lines = wrap_text(window->getSize().x, text);
                 }
             }
@@ -372,7 +379,7 @@ int main()
 
                 for (auto& t : lines)
                     delete t;
-                //lines = wrapText(window->getSize().x);
+
                 lines = wrap_text(window->getSize().x, text);
 
                 // Po każdej zmianie kursor wstawiamy po index
