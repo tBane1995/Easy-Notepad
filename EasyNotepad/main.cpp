@@ -74,8 +74,7 @@ std::vector < sf::Text* > wrapText(int line_length = -1) {
 
                         for (wchar_t& ch : word) {
                             character = ch;
-                            sf::Text w(part_of_word + character, font, characterSize);
-                            if (w.getGlobalBounds().width >= line_length) {
+                            if (sf::Text(part_of_word + character, font, characterSize).getGlobalBounds().width >= line_length) {
                                 sf::Text* new_text = new sf::Text(part_of_word, font, characterSize);
                                 new_text->setFillColor(sf::Color::White);
                                 if (!t.empty())
@@ -108,8 +107,8 @@ std::vector < sf::Text* > wrapText(int line_length = -1) {
                     }
                 }
 
-                sf::Text test_text(line + white_char + word, font, characterSize);
-                if (test_text.getGlobalBounds().width >= line_length) {
+                ;
+                if (sf::Text(line + white_char + word, font, characterSize).getGlobalBounds().width >= line_length) {
                     sf::Text* new_text = new sf::Text(line, font, characterSize);
                     new_text->setFillColor(sf::Color::White);
                     if (!t.empty())
@@ -459,6 +458,12 @@ int main()
                     text.insert(index, 1, L'\n');
                     index += 1;
                         
+                }
+                else if (event.text.unicode == 9) {
+                    // tab
+                    text.insert(index, 1, L'\t');
+                    index += 1;
+
                 }
                 else {
                     // other character
