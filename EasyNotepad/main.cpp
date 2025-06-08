@@ -26,186 +26,82 @@ sf::Time currentTime;
 int selecting_start = 2; // selecting start cursor
 int selecting_end = 4; // selecting end cursor
 
-std::vector < sf::Text* > wrapText(int line_length = -1) {
-    std::vector < sf::Text* > t;
+std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
+    
+    std::vector < sf::Text* > wrapped_text;
+
     std::wstring line = L"";
     std::wstring word = L"";
-    wchar_t white_char = '\0';
 
-    for (auto& wchar : text) {
-        if (wchar == '\n') {
+    sf::Color textColor = sf::Color::White;
 
-            if (white_char != '\0' && white_char != '\r')
-                line = line + white_char + word;
-            else
-                line = line + word;
+    for (auto& character : text) {
 
-            line = line + L"\n";
+        if (sf::Text(line + word + character, font, characterSize).getGlobalBounds().width > line_width)
+        {
+            sf::Text* t = new sf::Text(line + L"\n", font, characterSize);
+            (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+            t->setFillColor(textColor);
+            wrapped_text.push_back(t);
 
-            sf::Text* new_text = new sf::Text(line, font, characterSize);
-            new_text->setFillColor(sf::Color::White);
-            if (!t.empty())
-                new_text->setPosition(0, t.back()->getPosition().y + font.getLineSpacing(characterSize));
-            else
-                new_text->setPosition(0, 0);
-
-            t.push_back(new_text);
             line = L"";
-            word = L"";
-            white_char = '\0';
-            continue;
         }
+        else if (character == L'\n') {
 
+            if (sf::Text(line + word + L"\n", font, characterSize).getGlobalBounds().width > line_width) {
+                sf::Text* t = new sf::Text(line, font, characterSize);
+                (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+                t->setFillColor(textColor);
+                wrapped_text.push_back(t);
 
+                sf::Text* t2 = new sf::Text(word + L"\n", font, characterSize);
+                (wrapped_text.empty()) ? t2->setPosition(0, 0) : t2->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+                t2->setFillColor(textColor);
+                wrapped_text.push_back(t2);
 
-        if (wchar == L' ' || wchar == L'\t') {
-            white_char = wchar;
-            word = word + white_char;
+                line = L"";
+                word = L"";
+            }
+            else {
+                sf::Text* t = new sf::Text(line + word + L"\n", font, characterSize);
+                (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+                t->setFillColor(textColor);
+                wrapped_text.push_back(t);
 
-            if (line_length > -1) {
-
-                if (line == L"") {
-                    sf::Text test_word(word, font, characterSize);
-
-                    if (test_word.getGlobalBounds().width >= line_length) {
-
-                        std::wstring part_of_word = L"";
-                        wchar_t character = '\0';
-
-                        for (wchar_t& ch : word) {
-                            character = ch;
-                            if (sf::Text(part_of_word + character, font, characterSize).getGlobalBounds().width >= line_length) {
-                                sf::Text* new_text = new sf::Text(part_of_word, font, characterSize);
-                                new_text->setFillColor(sf::Color::White);
-                                if (!t.empty())
-                                    new_text->setPosition(0, t.back()->getPosition().y + font.getLineSpacing(characterSize));
-                                else
-                                    new_text->setPosition(0, 0);
-
-                                t.push_back(new_text);
-                                part_of_word = character;
-                            }
-                            else
-                                part_of_word = part_of_word + character;
-
-                        }
-
-                        if (part_of_word != L"") {
-                            sf::Text* new_text = new sf::Text(part_of_word, font, characterSize);
-                            new_text->setFillColor(sf::Color::White);
-                            if (!t.empty())
-                                new_text->setPosition(0, t.back()->getPosition().y + font.getLineSpacing(characterSize));
-                            else
-                                new_text->setPosition(0, 0);
-
-                            t.push_back(new_text);
-                            part_of_word = L"";
-                        }
-
-                        word = L"";
-                        continue;
-                    }
-                }
-
-                ;
-                if (sf::Text(line + white_char + word, font, characterSize).getGlobalBounds().width >= line_length) {
-                    sf::Text* new_text = new sf::Text(line, font, characterSize);
-                    new_text->setFillColor(sf::Color::White);
-                    if (!t.empty())
-                        new_text->setPosition(0, t.back()->getPosition().y + font.getLineSpacing(characterSize));
-                    else
-                        new_text->setPosition(0, 0);
-
-                    t.push_back(new_text);
-                    line = word;
-                    word = L"";
-                    continue;
-
-                }
-
-                line = line + word;
-
+                line = L"";
+                word = L"";
             }
 
+        }
+        else if (character == L' ' || character == L'\t') {
+            if (sf::Text(line + word, font, characterSize).getGlobalBounds().width > line_width) {
+                sf::Text* t = new sf::Text(line + L"\n", font, characterSize);
+                (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+                t->setFillColor(textColor);
+                wrapped_text.push_back(t);
+                line = L"";
+                
+            }
+            else {
+                line = line + word + character;
+            }
 
             word = L"";
-            white_char = '\0';
-        }
-        else if (wchar != '\0' && wchar != '\r') { // poprawka
-            word += wchar;
-        }
-    }
-
-    // dodaj ostatnią linię
-    sf::Text test_word(word, font, characterSize);
-
-    if (test_word.getGlobalBounds().width >= line_length) {
-
-        std::wstring part_of_word = L"";
-        wchar_t character = '\0';
-
-        for (wchar_t& ch : word) {
-            character = ch;
-            sf::Text w(part_of_word + character, font, characterSize);
-            if (w.getGlobalBounds().width >= line_length) {
-                sf::Text* new_text = new sf::Text(part_of_word, font, characterSize);
-                new_text->setFillColor(sf::Color::White);
-                if (!t.empty())
-                    new_text->setPosition(0, t.back()->getPosition().y + font.getLineSpacing(characterSize));
-                else
-                    new_text->setPosition(0, 0);
-
-                t.push_back(new_text);
-                part_of_word = character;
-            }
-            else
-                part_of_word = part_of_word + character;
-
-        }
-
-        if (part_of_word != L"") {
-            sf::Text* new_text = new sf::Text(part_of_word, font, characterSize);
-            new_text->setFillColor(sf::Color::White);
-            if (!t.empty())
-                new_text->setPosition(0, t.back()->getPosition().y + font.getLineSpacing(characterSize));
-            else
-                new_text->setPosition(0, 0);
-
-            t.push_back(new_text);
-            part_of_word = L"";
-        }
-
-        word = L"";
-    }
-
-    if (!word.empty() || !line.empty()) {
-
-        sf::Text test_text(line + word, font, characterSize);
-        if (line_length > -1 && test_text.getGlobalBounds().width >= line_length && !line.empty()) {
-            // dodaj najpierw obecną linię
-            sf::Text* new_text = new sf::Text(line, font, characterSize);
-            new_text->setFillColor(sf::Color::White);
-            new_text->setPosition(0, t.empty() ? 0
-                : t.back()->getPosition().y + font.getLineSpacing(characterSize));
-            t.push_back(new_text);
-
-            // a potem słowo w nowej linii
-            new_text = new sf::Text(word, font, characterSize);
-            new_text->setFillColor(sf::Color::White);
-            new_text->setPosition(0, t.back()->getPosition().y + font.getLineSpacing(characterSize));
-            t.push_back(new_text);
         }
         else {
-            // zmieściło się wszystko — dodaj jako jedna linia
-            sf::Text* new_text = new sf::Text(line + word, font, characterSize);
-            new_text->setFillColor(sf::Color::White);
-            new_text->setPosition(0, t.empty() ? 0
-                : t.back()->getPosition().y + font.getLineSpacing(characterSize));
-            t.push_back(new_text);
+            word = word + character;
         }
     }
 
-    return t;
+    if (line != L"" || word != L"") {
+        sf::Text* t = new sf::Text(line + word, font, characterSize);
+        (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+        t->setFillColor(textColor);
+        wrapped_text.push_back(t);
+    }
+
+    return wrapped_text;
+
 }
 
 
@@ -382,7 +278,7 @@ int main()
     
     text = L"";
 
-    lines = wrapText(window->getSize().x);
+    lines = wrap_text(window->getSize().x, text);
 
     cursor = sf::RectangleShape(sf::Vector2f(2, characterSize));
     cursor.setFillColor(sf::Color::Red);
@@ -430,7 +326,7 @@ int main()
                 text.insert(index, clip_text);
                 index += clip_text.size();
 
-                lines = wrapText(window->getSize().x);
+                lines = wrap_text(window->getSize().x, text);
                 cursorPosition = getCursorFromIndex(index);
                 setCursorPosition(cursorPosition);
                 
@@ -439,7 +335,7 @@ int main()
                 int index = getCursorIndex(cursorPosition);
                 if (!text.empty()) {
                     text.erase(index, 1);
-                    lines = wrapText(window->getSize().x);
+                    lines = wrap_text(window->getSize().x, text);
                 }
             }
             else if (event.type == sf::Event::TextEntered) {
@@ -476,7 +372,8 @@ int main()
 
                 for (auto& t : lines)
                     delete t;
-                lines = wrapText(window->getSize().x);
+                //lines = wrapText(window->getSize().x);
+                lines = wrap_text(window->getSize().x, text);
 
                 // Po każdej zmianie kursor wstawiamy po index
                 cursorPosition = getCursorFromIndex(index);
