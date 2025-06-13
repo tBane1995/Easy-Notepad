@@ -8,11 +8,12 @@
 - [Licencja](#licencja)
 
 ## Opis
-**Easy Notepad** to prosty edytor tekstu obsługujący znaki szerokie (wchar_t), w tym białe znaki, takie jak spacje (L' ') i tabulatory (L'\t). Edytor automatycznie zawija tekst (wrapowanie linii) w zadanej szerokości okna. Edytor posiada również funkcję wklejania tekstu z użyciem skrótu Ctrl+V. Niestety obecnie edytor nie pozwala na zaznaczanie, kopiowanie oraz wycinanie tekstu.
+**Easy Notepad** to prosty edytor tekstu. Edytor ten obsługuje szerokie znaki (tj. ą, ć, ó, ź itp.), a także znaki tabulacji. Edytor pozwala zaznaczać tekst, a obsługuje skróty klawiaturowe takie jak **Ctrl+C**, **Ctrl+V** i **Ctrl+X**. Niestety w chwili obecnej nie można zapisywać tekstu jako plik. Ta funkcjonalność zostanie dodane w najbliższym czasie. 
 
 ## Zrzuty ekranu
 ![Zrzut ekranu](screenshots/01.png)
 ![Zrzut ekranu](screenshots/02.png)
+![Zrzut ekranu](screenshots/03.png)
 
 ## Instalacja
 1. Pobierz i zainstaluje Visual Studio 2022

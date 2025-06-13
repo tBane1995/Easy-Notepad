@@ -7,6 +7,10 @@
 
 sf::RenderWindow* window;
 
+sf::Color text_color = sf::Color::White;
+sf::Color background_color = sf::Color(48, 48, 48, 255);
+sf::Color selection_color = sf::Color(3, 55, 161, 255);
+
 sf::Font font;
 short characterSize;
 
@@ -15,6 +19,7 @@ std::vector < sf::Text* > lines;
 
 sf::Vector2i mousePosition;
 sf::Vector2f worldMousePosition;
+bool mousePress = false;
 
 sf::RectangleShape cursor;
 sf::Vector2i cursorPosition = sf::Vector2i(0, 0);
@@ -23,8 +28,6 @@ sf::Clock timeClock;
 sf::Time currentTime;
 
 
-int selecting_start = 2; // selecting start cursor
-int selecting_end = 4; // selecting end cursor
 
 std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
     
@@ -33,30 +36,53 @@ std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
     std::wstring line = L"";
     std::wstring word = L"";
 
-    sf::Color textColor = sf::Color::White;
-
     for (auto& character : text) {
+        if (sf::Text(word + character, font, characterSize).getGlobalBounds().width > line_width) {
 
-        if (sf::Text(line + word + character, font, characterSize).getGlobalBounds().width > line_width)
-        {
-            sf::Text* t = new sf::Text(line + L"\n", font, characterSize);
+            if (line != L"") {
+                sf::Text* t = new sf::Text(line, font, characterSize);
+                (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+                wrapped_text.push_back(t);
+                line = L"";
+            }
+
+            // word longer than line
+            std::wstring l = L"";
+            word = word + character;
+            for (wchar_t& c : word) {
+                if (sf::Text(l+c, font, characterSize).getGlobalBounds().width > line_width) {
+                    sf::Text* t = new sf::Text(l, font, characterSize);
+                    (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
+                    wrapped_text.push_back(t);
+                    l = c;
+                }else 
+                    l = l + c;
+            }
+
+            sf::Text* t = new sf::Text(l, font, characterSize);
             (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
-            t->setFillColor(textColor);
+            wrapped_text.push_back(t);
+
+            word = L"";
+        }
+        else if (sf::Text(line + word + character, font, characterSize).getGlobalBounds().width > line_width)
+        {
+            sf::Text* t = new sf::Text(line, font, characterSize);
+            (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
             wrapped_text.push_back(t);
 
             line = L"";
+            word = word + character;
         }
         else if (character == L'\n') {
 
             if (sf::Text(line + word + L"\n", font, characterSize).getGlobalBounds().width > line_width) {
                 sf::Text* t = new sf::Text(line, font, characterSize);
                 (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
-                t->setFillColor(textColor);
                 wrapped_text.push_back(t);
 
                 sf::Text* t2 = new sf::Text(word + L"\n", font, characterSize);
                 (wrapped_text.empty()) ? t2->setPosition(0, 0) : t2->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
-                t2->setFillColor(textColor);
                 wrapped_text.push_back(t2);
 
                 line = L"";
@@ -65,7 +91,6 @@ std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
             else {
                 sf::Text* t = new sf::Text(line + word + L"\n", font, characterSize);
                 (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
-                t->setFillColor(textColor);
                 wrapped_text.push_back(t);
 
                 line = L"";
@@ -77,10 +102,8 @@ std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
             if (sf::Text(line + word, font, characterSize).getGlobalBounds().width > line_width) {
                 sf::Text* t = new sf::Text(line + L"\n", font, characterSize);
                 (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
-                t->setFillColor(textColor);
                 wrapped_text.push_back(t);
                 line = L"";
-                
             }
             else {
                 line = line + word + character;
@@ -96,9 +119,11 @@ std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
     if (line != L"" || word != L"") {
         sf::Text* t = new sf::Text(line + word, font, characterSize);
         (wrapped_text.empty()) ? t->setPosition(0, 0) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
-        t->setFillColor(textColor);
         wrapped_text.push_back(t);
     }
+
+    for (auto& line : wrapped_text)
+        line->setFillColor(text_color);
 
     return wrapped_text;
 
@@ -107,11 +132,34 @@ std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
 
 sf::Vector2i getCursorPosition() {
 
-    sf::Vector2i cur_pos = sf::Vector2i(0, 0);
+    if (lines.empty())
+        return sf::Vector2i(0, 0);
+
+    if (worldMousePosition.y >= lines.back()->getGlobalBounds().top) {
+
+        for (size_t i = 0; i < lines.back()->getString().toWideString().size(); ++i) {
+            sf::Vector2f charPos = lines.back()->findCharacterPos(i);
+            sf::Vector2f nextPos = lines.back()->findCharacterPos(i + 1);
+
+            float charWidth = nextPos.x - charPos.x;
+
+            if (worldMousePosition.x < charPos.x + charWidth / 2.f) {
+                std::cout << "cursor on position: " << i << "," << lines.size() - 1 << "\n";
+                return sf::Vector2i(i, lines.size() - 1);
+            }
+        }
+
+        std::cout << "cursor on position: " << lines.back()->getString().toWideString().size() << "," << lines.size() - 1 << "\n";
+        return sf::Vector2i(lines.back()->getString().toWideString().size(), lines.size() - 1);
+    }
+        
+    
 
     for (int t = 0; t < lines.size(); t++) {
 
-        for (size_t i = 0; i < lines[t]->getString().getSize(); ++i) {
+        
+
+        for (size_t i = 0; i < lines[t]->getString().toWideString().size() - 1; ++i) {
 
             sf::Vector2f charPos = lines[t]->findCharacterPos(i);
             float nextX = lines[t]->findCharacterPos(i + 1).x;
@@ -120,38 +168,61 @@ sf::Vector2i getCursorPosition() {
 
             if (charRect.contains(worldMousePosition)) {
 
-                if (worldMousePosition.x < charRect.left + charRect.width / 2)
+                if (worldMousePosition.x < charRect.left + charRect.width / 2) {
+                    std::cout << "cursor on position: " << i << "," << t << "\n";
                     return sf::Vector2i(i, t);
-                else
+                }
+                else {
+                    std::cout << "cursor on position: " << i+1 << "," << t << "\n";
                     return sf::Vector2i(i + 1, t);
+                }
+                    
 
             }
 
-            bool isLastChar = (i == lines[t]->getString().getSize() - 1);
-            if (isLastChar &&
-                worldMousePosition.x > charRect.left &&
-                worldMousePosition.y >= charRect.top &&
-                worldMousePosition.y <= charRect.top + charRect.height)
-            {
-                return sf::Vector2i(i + 1, t);
+        }
+
+        sf::Vector2f charPos; 
+        if (lines[t]->getString().toWideString().back() == L'\n') {
+
+            charPos = lines[t]->findCharacterPos(lines[t]->getString().toWideString().size() - 1);
+            if (worldMousePosition.y >= charPos.y &&
+                worldMousePosition.y <= charPos.y + font.getLineSpacing(characterSize) &&
+                worldMousePosition.x >= charPos.x) {
+                std::cout << "cursor on position: " << lines[t]->getString().toWideString().size()-1 << "," << t << "\n";
+                return sf::Vector2i(lines[t]->getString().toWideString().size()-1, t);
             }
         }
+        else {
+            charPos = lines[t]->findCharacterPos(lines[t]->getString().toWideString().size());
+            if (worldMousePosition.y >= charPos.y &&
+                worldMousePosition.y <= charPos.y + font.getLineSpacing(characterSize) &&
+                worldMousePosition.x >= charPos.x) {
+                std::cout << "cursor on position: " << lines[t]->getString().toWideString().size() << "," << t << "\n";
+                return sf::Vector2i(lines[t]->getString().toWideString().size(), t);
+            }
+        }
+            
+
+        
+
     }
 
-    return cur_pos;
+    return sf::Vector2i(lines.back()->getString().toWideString().size(), lines.size() - 1);
 }
 
 int getCursorIndex(sf::Vector2i position) {
     int index = 0;
     for (int i = 0; i < position.y && i < lines.size(); ++i) {
-        index += lines[i]->getString().getSize();
+        index += lines[i]->getString().toWideString().size();
     }
     index += position.x;
+    std::cout << "index: " << index << "\n";
     return index;
 }
 
 sf::Vector2i getCursorFromIndex(int index) {
-    if (index <= 0 || lines.empty())
+    if (lines.empty())
         return sf::Vector2i(0, 0);
 
     int current = 0;
@@ -167,8 +238,151 @@ sf::Vector2i getCursorFromIndex(int index) {
 
     // Jeśli index wykracza poza długość tekstu, ustaw na koniec ostatniej linii
     return sf::Vector2i(lines.back()->getString().toWideString().size(), lines.size() - 1);
+}
 
-    
+
+class Selection {
+public:
+
+    int start_index = 0;
+    int end_index = 0;
+
+    Selection() {
+        start_index = 0;
+        end_index = 0;
+    }
+
+    ~Selection() {}
+
+    void draw() {
+
+        sf::Vector2i start_position;
+        sf::Vector2i end_position;
+
+        if (start_index < end_index) {
+            start_position = getCursorFromIndex(start_index);
+            end_position = getCursorFromIndex(end_index);
+        }
+        else {
+            start_position = getCursorFromIndex(end_index);
+            end_position = getCursorFromIndex(start_index);
+        }
+
+        int start_x = start_position.x;
+        int end_x = end_position.x;
+
+        int start_y = start_position.y;
+        int end_y = end_position.y;
+
+        float rect_start_x = (start_x == 0) ? 0 : lines[start_y]->findCharacterPos(start_x).x;
+        float rect_end_x = lines[end_y]->findCharacterPos(end_x).x;
+
+        float rect_start_y = (start_x == 0) ? 0 : lines[start_y]->findCharacterPos(start_x).y;
+        float rect_end_y = lines[end_y]->findCharacterPos(end_x).y;
+
+
+        std::vector < sf::RectangleShape > rects;
+
+
+        if (end_y == start_y && start_x != end_x) {
+            sf::RectangleShape rect = sf::RectangleShape(sf::Vector2f(rect_end_x - rect_start_x + 1, font.getLineSpacing(characterSize)));
+            rect.setPosition(rect_start_x, rect_start_y);
+            rect.setFillColor(selection_color);
+            rects.push_back(rect);
+        }
+        else if (end_y - start_y >= 1) {
+
+            sf::RectangleShape top_rect = sf::RectangleShape(sf::RectangleShape(sf::Vector2f(window->getSize().x - rect_start_x, font.getLineSpacing(characterSize))));
+            top_rect.setPosition(rect_start_x, rect_start_y);
+            top_rect.setFillColor(selection_color);
+            rects.push_back(top_rect);
+
+            sf::RectangleShape center_rect = sf::RectangleShape(sf::RectangleShape(sf::Vector2f(window->getSize().x, (end_y - start_y - 1) * font.getLineSpacing(characterSize))));
+            center_rect.setPosition(0, rect_start_y + font.getLineSpacing(characterSize));
+            center_rect.setFillColor(selection_color);
+            rects.push_back(center_rect);
+
+            sf::RectangleShape bottom_rect = sf::RectangleShape(sf::RectangleShape(sf::Vector2f(rect_end_x, font.getLineSpacing(characterSize))));
+            bottom_rect.setPosition(0, rect_end_y);
+            bottom_rect.setFillColor(selection_color);
+            rects.push_back(bottom_rect);
+        }
+
+
+        for (auto& rect : rects)
+            window->draw(rect);
+    }
+};
+
+Selection* selection = nullptr;
+
+void setCursorPosition(sf::Vector2i cursor_position) {
+    cursorPosition = cursor_position;
+
+    if (cursor_position == sf::Vector2i(0, 0)) {
+        cursor.setPosition(sf::Vector2f(0, 0));
+        return;
+    }
+
+    if (lines.empty()) {
+        cursor.setPosition(sf::Vector2f(0, 0));
+        return;
+    }
+
+
+    std::wstring line = lines[cursorPosition.y]->getString().toWideString();
+
+    if (line.size() == 0) {
+        cursor.setPosition(lines[cursorPosition.y]->getPosition());    // poprawka
+        return;
+    }
+
+    if (cursor_position.x < line.size()) {
+        sf::Vector2f charPos = lines[cursorPosition.y]->findCharacterPos(cursor_position.x);
+        cursor.setPosition(charPos.x, charPos.y);
+        return;
+    }
+
+
+    // Kursor na końcu linii
+    if (line.back() == L'\n') {
+        sf::Vector2f endPos = lines[cursorPosition.y]->findCharacterPos(line.size() - 1);
+        cursor.setPosition(endPos.x, endPos.y);
+    }
+    else
+    {
+        sf::Vector2f endPos = lines[cursorPosition.y]->findCharacterPos(line.size());
+        cursor.setPosition(endPos.x, endPos.y);
+    }
+
+}
+
+void setCursorLeft() {
+    if (cursorPosition.x > 0) {
+        cursorPosition.x -= 1;
+    }
+    else {
+        if (!lines.empty() && cursorPosition.y > 0) {
+            cursorPosition.y -= 1;
+            cursorPosition.x = lines[cursorPosition.y]->getString().toWideString().size() - 1; //////// -1
+        }
+    }
+
+    setCursorPosition(cursorPosition);
+}
+
+void setCursorRight() {
+    if (!lines.empty() && cursorPosition.x < lines[cursorPosition.y]->getString().toWideString().size()) { //////// +1
+        cursorPosition.x += 1;
+    }
+    else {
+        if (cursorPosition.y < lines.size() - 1) {
+            cursorPosition.x = 0;
+            cursorPosition.y += 1;
+        }
+    }
+
+    setCursorPosition(cursorPosition);
 }
 
 void setCursorUp() {
@@ -199,6 +413,7 @@ void setCursorUp() {
 
         cursorPosition.x = closestIndex;
         cursor.setPosition(line->findCharacterPos(closestIndex));
+
     }
 }
 void setCursorDown() {
@@ -233,37 +448,129 @@ void setCursorDown() {
 
 }
 
-void setCursorPosition(sf::Vector2i cursor_position) {
-    cursorPosition = cursor_position;
+void setCursorLeftWithShift() {
 
-    if (cursor_position == sf::Vector2i(0, 0)) {
-        cursor.setPosition(sf::Vector2f(0, 0));
+    std::cout << "shift + L" << "\n";
+
+    if (lines.empty()) {
         return;
     }
         
 
-    for (int t = 0; t < lines.size(); t++) {
-        if (t == cursor_position.y) {
-            
-            std::wstring line = lines[t]->getString().toWideString();
+    int index = getCursorIndex(cursorPosition) - 1;
 
-            if (line.size() == 0) {
-                cursor.setPosition(lines[t]->getPosition());    // poprawka
-                return;
-            }
+    if (selection == nullptr) {
+        selection = new Selection();
+        selection->start_index = index + 1;
+        selection->end_index = index;
 
-            if (cursor_position.x < line.size()) {
-                sf::Vector2f charPos = lines[t]->findCharacterPos(cursor_position.x);
-                cursor.setPosition(charPos.x, charPos.y);
-                return;
-            }
-            
+    }
+    else {
+        selection->end_index = index;
 
-            // Kursor na końcu linii
-            sf::Vector2f endPos = lines[t]->findCharacterPos(line.size());
-            cursor.setPosition(endPos.x, endPos.y);
-            return;
+        if (selection->end_index == selection->start_index) {
+            delete selection;
+            selection = nullptr;
         }
+    }
+
+    setCursorPosition(getCursorFromIndex(index));
+   
+}
+
+void setCursorRightWithShift() {
+    std::cout << "shift + R" << "\n";
+
+    if (lines.empty()) {
+        return;
+    }
+
+    int index = getCursorIndex(cursorPosition) + 1;
+
+    if (selection == nullptr) {
+        selection = new Selection();
+
+        selection->start_index = index - 1;
+        selection->end_index = index;
+
+    }
+    else {
+        selection->end_index = index;
+
+        if (selection->end_index == selection->start_index) {
+            delete selection;
+            selection = nullptr;
+        }
+    }
+
+    setCursorPosition(getCursorFromIndex(index));
+}
+
+void setCursorUpWithShift() {
+
+    if (lines.empty()) {
+        return;
+    }
+
+    if (selection == nullptr) {
+
+        int prev_index = getCursorIndex(cursorPosition);
+        setCursorUp();
+        int index = getCursorIndex(cursorPosition);
+
+        selection = new Selection();
+
+        selection->start_index = prev_index;
+        selection->end_index = index;
+
+        setCursorPosition(getCursorFromIndex(index));
+
+    }
+    else {
+        setCursorUp();
+        int index = getCursorIndex(cursorPosition);
+        selection->end_index = index;
+
+        if (selection->end_index == selection->start_index) {
+            delete selection;
+            selection = nullptr;
+        }
+
+        setCursorPosition(getCursorFromIndex(index));
+    }
+}
+
+void setCursorDownWithShift() {
+
+    if (lines.empty()) {
+        return;
+    }
+
+    if (selection == nullptr) {
+
+        int prev_index = getCursorIndex(cursorPosition);
+        setCursorDown();
+        int index = getCursorIndex(cursorPosition);
+
+        selection = new Selection();
+
+        selection->start_index = prev_index;
+        selection->end_index = index;
+
+        setCursorPosition(getCursorFromIndex(index));
+
+    }
+    else {
+        setCursorDown();
+        int index = getCursorIndex(cursorPosition);
+        selection->end_index = index;
+
+        if (selection->end_index == selection->start_index) {
+            delete selection;
+            selection = nullptr;
+        }
+
+        setCursorPosition(getCursorFromIndex(index));
     }
 }
 
@@ -288,6 +595,8 @@ int main()
     SFML_intro* intro = new SFML_intro(window);
     delete intro;
 
+    selection = nullptr;
+
     while (window->isOpen())
     {
 
@@ -311,10 +620,38 @@ int main()
                 view.setCenter(view.getSize() / 2.f);
                 window->setView(view);
             }
+            else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+
+                mousePress = true;
+                
+                sf::Vector2i cur_pos = getCursorPosition();
+
+                if (!lines.empty() && cur_pos.y < lines.size()) {
+                    if (selection != nullptr)
+                        delete selection;
+
+                    selection = new Selection();
+                    selection->start_index = getCursorIndex(cur_pos);
+                    selection->end_index = selection->start_index;
+                    setCursorPosition(cur_pos);
+                }
+            }
             else if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2i cur_pos = getCursorPosition();
                 setCursorPosition(cur_pos);
-            }else if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::V) {
+                mousePress = false;
+            }
+            else if (event.type == sf::Event::MouseMoved) {
+                if (mousePress) {
+                    sf::Vector2i cur_pos = getCursorPosition();
+
+                    if(selection != nullptr)
+                        selection->end_index = getCursorIndex(cur_pos);
+
+                    setCursorPosition(cur_pos);
+                }
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::V) {
                 // Ctrl + V 
                 int index = getCursorIndex(cursorPosition);
                 
@@ -334,15 +671,93 @@ int main()
                 setCursorPosition(cursorPosition);
                 
             }
+            else if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::C) {
+                // Ctrl + C
+                if (selection && selection->start_index != selection->end_index) {
+                    
+                    std::wstring clip_text = text.substr(std::min(selection->start_index, selection->end_index), std::abs(selection->end_index - selection->start_index));
+                    sf::Clipboard::setString(clip_text);
+                }
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::X) {
+                // Ctrl + X
+                if (selection!=nullptr && selection->start_index != selection->end_index) {
+
+                    std::wstring clip_text = text.substr(std::min(selection->start_index, selection->end_index), std::abs(selection->end_index - selection->start_index));
+                    sf::Clipboard::setString(clip_text);
+
+                    text.erase(std::min(selection->start_index, selection->end_index), std::abs(selection->end_index - selection->start_index));
+                    int index = std::min(selection->start_index, selection->end_index);
+                    delete selection;
+                    selection = nullptr;
+                    setCursorPosition(getCursorFromIndex(index));
+                }
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.shift && event.key.code == sf::Keyboard::Left) {
+                setCursorLeftWithShift();
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.shift && event.key.code == sf::Keyboard::Right) {
+
+                setCursorRightWithShift();
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.shift && event.key.code == sf::Keyboard::Up) {
+                
+                setCursorUpWithShift();
+
+                
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.shift && event.key.code == sf::Keyboard::Down) {
+                setCursorDownWithShift();
+
+            }
             else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Delete) {
-                int index = getCursorIndex(cursorPosition);
                 if (!text.empty()) {
-                    text.erase(index, 1);
+
+                    if (selection == nullptr || (selection != nullptr && selection->start_index == selection->end_index)) {
+                        int index = getCursorIndex(cursorPosition);
+                        text.erase(index, 1);
+                    }
+                    else {
+                        text.erase(std::min(selection->start_index, selection->end_index), std::abs(selection->end_index - selection->start_index));
+                        int index = std::min(selection->start_index, selection->end_index);
+                        delete selection;
+                        selection = nullptr;
+                        setCursorPosition(getCursorFromIndex(index));
+                    }
 
                     for (auto& line : lines)
                         delete line;
 
                     lines = wrap_text(window->getSize().x, text);
+
+                }
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Left) {
+                setCursorLeft();
+                if (selection != nullptr) {
+                    delete selection;
+                    selection = nullptr;
+                }
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Right) {
+                setCursorRight();
+                if (selection != nullptr) {
+                    delete selection;
+                    selection = nullptr;
+                }
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up) {
+                setCursorUp();
+                if (selection != nullptr) {
+                    delete selection;
+                    selection = nullptr;
+                }
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Down) {
+                setCursorDown();
+                if (selection != nullptr) {
+                    delete selection;
+                    selection = nullptr;
                 }
             }
             else if (event.type == sf::Event::TextEntered) {
@@ -350,10 +765,21 @@ int main()
                 int index = getCursorIndex(cursorPosition);
 
                 if (event.text.unicode == 8) {
-                        // backspace
+                    // backspace
                     if (index > 0 && !text.empty()) {
-                        text.erase(index - 1, 1);
-                        index -= 1;
+                        if (selection == nullptr || (selection!=nullptr && selection->start_index == selection->end_index)) {
+                            text.erase(index - 1, 1);
+                            index -= 1;
+                        }
+                        else {
+                            text.erase(std::min(selection->start_index, selection->end_index), std::abs(selection->end_index - selection->start_index));
+                            index = std::min(selection->start_index, selection->end_index);
+                        }
+
+                        if (selection != nullptr) {
+                            delete selection;
+                            selection = nullptr;
+                        }
                     }
                 }
                 else if (event.text.unicode == 13) {
@@ -372,6 +798,16 @@ int main()
                     // other character
                     wchar_t character = static_cast<wchar_t>(event.text.unicode);
                     if (character >= 32 && character != 127) {
+
+                        if (selection != nullptr && selection->start_index != selection->end_index) {
+
+                            text.erase(std::min(selection->start_index, selection->end_index), std::abs(selection->end_index - selection->start_index));
+                            index = std::min(selection->start_index, selection->end_index);
+                            delete selection;
+                            selection = nullptr;
+                        }
+                        
+
                         text.insert(index, 1, character);
                         index += 1;
                     }
@@ -389,48 +825,16 @@ int main()
 
 
             }
-            else if (event.type == sf::Event::KeyPressed) {
-                if(event.key.code == sf::Keyboard::Left) {
-                    if (cursorPosition.x > 0) {
-                        cursorPosition.x -= 1;
-                    }
-                    else {
-                        if (!lines.empty() && cursorPosition.y > 0) {
-                            cursorPosition.y -= 1;
-                            cursorPosition.x = lines[cursorPosition.y]->getString().toWideString().size() - 1; //////// -1
-                        }
-                    }
-
-                }
-                else if (event.key.code == sf::Keyboard::Right) {
-                    if (!lines.empty() && cursorPosition.x < lines[cursorPosition.y]->getString().toWideString().size()) { //////// +1
-                        cursorPosition.x += 1;
-                    }
-                    else {
-                        if (cursorPosition.y < lines.size() - 1) {
-                            cursorPosition.x = 0;
-                            cursorPosition.y += 1;
-                        }
-                    }
-                }
-                else if (event.key.code == sf::Keyboard::Up) {
-                    setCursorUp();
-
-                }
-                else if (event.key.code == sf::Keyboard::Down) {
-                    setCursorDown();
-
-                }
-
-
-                setCursorPosition(cursorPosition);
-
-            }
 
 
         }
 
-        window->clear(sf::Color(48, 48, 48, 255));
+        window->clear(background_color);
+
+        if (selection != nullptr) {
+            selection->draw();
+        }
+
         for (auto& line : lines)
             window->draw(*line);
 

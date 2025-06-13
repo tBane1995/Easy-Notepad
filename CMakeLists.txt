@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(EasyNotepad VERSION 2.0)
+project(EasyNotepad VERSION 0.5)
 
 add_executable(${PROJECT_NAME} EasyNotepad/main.cpp)
 
