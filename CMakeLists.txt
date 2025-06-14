@@ -4,7 +4,11 @@ project(EasyNotepad VERSION 0.5)
 add_executable(${PROJECT_NAME} EasyNotepad/main.cpp)
 
 target_sources(${PROJECT_NAME} PRIVATE
+    EasyNotepad/window.hpp
     EasyNotepad/SFML_intro.hpp
+    EasyNotepad/mouse.hpp
+    EasyNotepad/elementGUI.hpp
+    EasyNotepad/scrollbar.hpp
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
