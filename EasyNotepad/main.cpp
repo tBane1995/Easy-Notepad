@@ -369,9 +369,13 @@ void setCursorLeft() {
 void setCursorRight() {
     //std::cout << "Right" << "\n";
 
+    if (lines.empty()) {
+        return;
+    }
+
     int last_character_index = (lines[cursorPosition.y]->getString().toWideString().back() == '\n') ? lines[cursorPosition.y]->getString().toWideString().size() - 1 : lines[cursorPosition.y]->getString().toWideString().size();
 
-    if (!lines.empty() && cursorPosition.x < last_character_index) { //////// +1
+    if (cursorPosition.x < last_character_index) { //////// +1
         cursorPosition.x += 1;
     }
     else {
@@ -580,10 +584,12 @@ void generateScrollbar() {
     if (scrollbar != nullptr) {
 
         float min_val_on_screen = scrollbar->scroll_value;
-        float max_val_on_screen = min_val_on_screen + int(window->getSize().y / font.getLineSpacing(characterSize)) - 1;
+        int lines_on_screen = int(window->getSize().y / font.getLineSpacing(characterSize));
+        float max_val_on_screen = min_val_on_screen + lines_on_screen;
 
         std::cout << "cur: " << cursorPosition.y << "\n";
         std::cout << "min: " << min_val_on_screen << "\n";
+        std::cout << "lines on screen: " << lines_on_screen << "\n";
         std::cout << "max: " << max_val_on_screen << "\n";
         
 
