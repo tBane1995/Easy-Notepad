@@ -12,9 +12,9 @@
 #include "scrollbar.hpp"
 
 
-sf::Color text_color = sf::Color::White;
-sf::Color background_color = sf::Color(48, 48, 48, 255);
-sf::Color selection_color = sf::Color(3, 55, 161, 255);
+sf::Color text_color = sf::Color(188, 190, 196);
+sf::Color background_color = sf::Color(30, 31, 34, 255);
+sf::Color selection_color = sf::Color(33, 66, 131, 255);
 
 sf::Font font;
 short characterSize;
@@ -32,7 +32,7 @@ sf::Time currentTime;
 
 
 
-std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::wstring text) {
+std::vector < sf::Text* > wrap_text(int line_width, std::wstring text) {
     
     std::vector < sf::Text* > wrapped_text;
 
@@ -44,7 +44,6 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
 
             if (line != L"") {
                 sf::Text* t = new sf::Text(line, font, characterSize);
-                (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
                 wrapped_text.push_back(t);
                 line = L"";
             }
@@ -55,7 +54,6 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
             for (wchar_t& c : word) {
                 if (sf::Text(l+c, font, characterSize).getGlobalBounds().width > line_width) {
                     sf::Text* t = new sf::Text(l, font, characterSize);
-                    (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
                     wrapped_text.push_back(t);
                     l = c;
                 }else 
@@ -63,7 +61,6 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
             }
 
             sf::Text* t = new sf::Text(l, font, characterSize);
-            (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
             wrapped_text.push_back(t);
 
             word = L"";
@@ -71,7 +68,6 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
         else if (sf::Text(line + word + character, font, characterSize).getGlobalBounds().width > line_width)
         {
             sf::Text* t = new sf::Text(line, font, characterSize);
-            (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
             wrapped_text.push_back(t);
 
             line = L"";
@@ -79,13 +75,11 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
         }
         else if (character == L'\n') {
 
-            if (sf::Text(line + word + L"\n", font, characterSize).getGlobalBounds().width > line_width) {
+            if (sf::Text(line + word, font, characterSize).getGlobalBounds().width > line_width) {
                 sf::Text* t = new sf::Text(line, font, characterSize);
-                (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
                 wrapped_text.push_back(t);
 
                 sf::Text* t2 = new sf::Text(word + L"\n", font, characterSize);
-                (wrapped_text.empty()) ? t2->setPosition(position) : t2->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
                 wrapped_text.push_back(t2);
 
                 line = L"";
@@ -93,7 +87,6 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
             }
             else {
                 sf::Text* t = new sf::Text(line + word + L"\n", font, characterSize);
-                (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
                 wrapped_text.push_back(t);
 
                 line = L"";
@@ -104,7 +97,6 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
         else if (character == L' ' || character == L'\t') {
             if (sf::Text(line + word, font, characterSize).getGlobalBounds().width > line_width) {
                 sf::Text* t = new sf::Text(line + L"\n", font, characterSize);
-                (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
                 wrapped_text.push_back(t);
                 line = L"";
             }
@@ -121,17 +113,12 @@ std::vector < sf::Text* > wrap_text(int line_width, sf::Vector2f position, std::
 
     if (line != L"" || word != L"") {
         sf::Text* t = new sf::Text(line + word, font, characterSize);
-        (wrapped_text.empty()) ? t->setPosition(position) : t->setPosition(0, wrapped_text.back()->getPosition().y + font.getLineSpacing(characterSize));
         wrapped_text.push_back(t);
     }
-
-    for (auto& line : wrapped_text)
-        line->setFillColor(text_color);
 
     return wrapped_text;
 
 }
-
 
 sf::Vector2i getCursorPosition() {
 
@@ -247,12 +234,10 @@ void linesPositioning() {
 
     sf::Vector2f position(0, float(-scrollbar->scroll_value) * font.getLineSpacing(characterSize));
 
-    sf::Vector2f prev_start_position = lines.front()->getPosition();
-
-    for (auto& line : lines) {
-        sf::Vector2f p = line->getPosition();
-        p = p - prev_start_position + sf::Vector2f(position);
-        line->setPosition(p);
+    for (int i = 0; i < lines.size();i+=1) {
+        sf::Vector2f p = sf::Vector2f(0, float(i) * font.getLineSpacing(characterSize));
+        p = p + sf::Vector2f(position);
+        lines[i]->setPosition(p);
     }
 }
 
@@ -359,16 +344,8 @@ void setCursorPosition(sf::Vector2i cursor_position) {
     }
 
 
-    // Kursor na końcu linii
-    if (line.back() == L'\n') {
-        sf::Vector2f endPos = lines[cursorPosition.y]->findCharacterPos(line.size() - 1);
-        cursor.setPosition(endPos.x, endPos.y);
-    }
-    else
-    {
-        sf::Vector2f endPos = lines[cursorPosition.y]->findCharacterPos(line.size());
-        cursor.setPosition(endPos.x, endPos.y);
-    }
+    sf::Vector2f endPos = lines[cursorPosition.y]->findCharacterPos(line.size());
+    cursor.setPosition(endPos.x, endPos.y);
 
 }
 
@@ -380,7 +357,9 @@ void setCursorLeft() {
     else {
         if (!lines.empty() && cursorPosition.y > 0) {
             cursorPosition.y -= 1;
-            cursorPosition.x = lines[cursorPosition.y]->getString().toWideString().size() - 1; //////// -1
+            int last_character_index = (lines[cursorPosition.y]->getString().toWideString().back() == '\n') ? lines[cursorPosition.y]->getString().toWideString().size() - 1 : lines[cursorPosition.y]->getString().toWideString().size();
+            cursorPosition.x = last_character_index;
+
         }
     }
 
@@ -389,7 +368,10 @@ void setCursorLeft() {
 
 void setCursorRight() {
     //std::cout << "Right" << "\n";
-    if (!lines.empty() && cursorPosition.x < lines[cursorPosition.y]->getString().toWideString().size()) { //////// +1
+
+    int last_character_index = (lines[cursorPosition.y]->getString().toWideString().back() == '\n') ? lines[cursorPosition.y]->getString().toWideString().size() - 1 : lines[cursorPosition.y]->getString().toWideString().size();
+
+    if (!lines.empty() && cursorPosition.x < last_character_index) { //////// +1
         cursorPosition.x += 1;
     }
     else {
@@ -592,19 +574,36 @@ void setCursorDownWithShift() {
 }
 
 void generateScrollbar() {
-    float scrollbar_value = 0;
+
+    float scrollbar_value;
 
     if (scrollbar != nullptr) {
-        scrollbar_value = scrollbar->scroll_value;
-        delete scrollbar;
+
+        float min_val_on_screen = scrollbar->scroll_value;
+        float max_val_on_screen = min_val_on_screen + int(window->getSize().y / font.getLineSpacing(characterSize)) - 1;
+
+        std::cout << "cur: " << cursorPosition.y << "\n";
+        std::cout << "min: " << min_val_on_screen << "\n";
+        std::cout << "max: " << max_val_on_screen << "\n";
+        
+
+        if (cursorPosition.y < min_val_on_screen)
+            scrollbar_value = cursorPosition.y;
+        else if (cursorPosition.y > max_val_on_screen - 1)
+            scrollbar_value = cursorPosition.y - int(window->getSize().y / font.getLineSpacing(characterSize) - 2);
+        else
+            scrollbar_value = scrollbar->scroll_value;
     }
+    else
+        scrollbar_value = 0;
+
+    std::cout << "val: " << scrollbar_value << "\n\n\n";
 
     sf::Vector2f scrollbar_size(16, window->getSize().y);
     sf::Vector2f scrollbar_position(window->getSize().x-16, 0);
 
     float scrollbar_len = window->getSize().y/font.getLineSpacing(characterSize);
-    float max_value = lines.size();
-    
+    float max_value = (lines.empty())? 0 : lines.size()-1;
 
     scrollbar = new Scrollbar(scrollbar_size, scrollbar_position, 0, max_value, scrollbar_value, scrollbar_len);
     scrollbar->onclick_func = []() {
@@ -617,17 +616,21 @@ void generateScrollbar() {
 int main()
 {
     
-    generateScrollbar();
+    
 
     font.loadFromFile("C:/Windows/Fonts/arial.ttf");
     characterSize = 17;
     
     text = L"";
 
-    lines = wrap_text(window->getSize().x-16, sf::Vector2f(0, -scrollbar->scroll_value), text);
+    
+
+    lines = wrap_text(window->getSize().x-16, text);
+    generateScrollbar();
 
     cursor = sf::RectangleShape(sf::Vector2f(2, characterSize));
     cursor.setFillColor(sf::Color::Red);
+
 
     sf::Clock clock;
 
@@ -645,8 +648,6 @@ int main()
         currentTime = timeClock.getElapsedTime();
 
         scrollbar->update();
-
-        
 
         sf::Event event;
         while (window->pollEvent(event)) {
@@ -722,7 +723,7 @@ int main()
                 for (auto& line : lines)
                     delete line;
 
-                lines = wrap_text(window->getSize().x - 16, sf::Vector2f(0, -scrollbar->scroll_value), text);
+                lines = wrap_text(window->getSize().x - 16, text);
                 cursorPosition = getCursorFromIndex(index);
 
                 generateScrollbar();
@@ -801,7 +802,7 @@ int main()
                     for (auto& line : lines)
                         delete line;
 
-                    lines = wrap_text(window->getSize().x - 16, sf::Vector2f(0, -scrollbar->scroll_value), text);
+                    lines = wrap_text(window->getSize().x - 16, text);
                     generateScrollbar();
                     linesPositioning();
 
@@ -873,7 +874,7 @@ int main()
                     // enter
                     text.insert(index, 1, L'\n');
                     index += 1;
-                        
+
                 }
                 else if (event.text.unicode == 9) {
                     // tab
@@ -900,10 +901,13 @@ int main()
                     }
                 }
 
-                for (auto& t : lines)
-                    delete t;
+                if (!lines.empty()) {
+                    for (auto& t : lines)
+                        delete t;
+                }
+                lines.clear();
 
-                lines = wrap_text(window->getSize().x - 16, sf::Vector2f(0, -scrollbar->scroll_value), text);
+                lines = wrap_text(window->getSize().x - 16, text);
 
                 // Po każdej zmianie kursor wstawiamy po index
                 cursorPosition = getCursorFromIndex(index);
