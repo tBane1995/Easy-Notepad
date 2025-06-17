@@ -581,13 +581,14 @@ void generateScrollbar() {
 
     float scrollbar_value;
 
+    std::cout << "cur: " << cursorPosition.y << "\n";
+
     if (scrollbar != nullptr) {
 
         float min_val_on_screen = scrollbar->scroll_value;
         int lines_on_screen = int(window->getSize().y / font.getLineSpacing(characterSize));
         float max_val_on_screen = min_val_on_screen + lines_on_screen;
 
-        std::cout << "cur: " << cursorPosition.y << "\n";
         std::cout << "min: " << min_val_on_screen << "\n";
         std::cout << "lines on screen: " << lines_on_screen << "\n";
         std::cout << "max: " << max_val_on_screen << "\n";
@@ -596,7 +597,7 @@ void generateScrollbar() {
         if (cursorPosition.y < min_val_on_screen)
             scrollbar_value = cursorPosition.y;
         else if (cursorPosition.y > max_val_on_screen - 1)
-            scrollbar_value = cursorPosition.y - int(window->getSize().y / font.getLineSpacing(characterSize) - 2);
+            scrollbar_value = cursorPosition.y - int(window->getSize().y / font.getLineSpacing(characterSize) - 1);
         else
             scrollbar_value = scrollbar->scroll_value;
     }
@@ -816,9 +817,10 @@ int main()
             }
             else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Left) {
                 
+                setCursorLeft();
                 generateScrollbar();
                 linesPositioning();
-                setCursorLeft();
+                
                 if (selection != nullptr) {
                     delete selection;
                     selection = nullptr;
@@ -826,9 +828,10 @@ int main()
             }
             else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Right) {
                 
+                setCursorRight();
                 generateScrollbar();
                 linesPositioning();
-                setCursorRight();
+                
                 if (selection != nullptr) {
                     delete selection;
                     selection = nullptr;
@@ -836,9 +839,10 @@ int main()
             }
             else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Up) {
                 
+                setCursorUp();
                 generateScrollbar();
                 linesPositioning();
-                setCursorUp();
+                
                 if (selection != nullptr) {
                     delete selection;
                     selection = nullptr;
@@ -846,9 +850,10 @@ int main()
             }
             else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Down) {
                 
+                setCursorDown();
                 generateScrollbar();
                 linesPositioning();
-                setCursorDown();
+                
                 if (selection != nullptr) {
                     delete selection;
                     selection = nullptr;
