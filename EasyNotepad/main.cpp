@@ -330,22 +330,23 @@ void setCursorPosition(sf::Vector2i cursor_position) {
     }
 
 
-    std::wstring line = lines[cursorPosition.y]->getString().toWideString();
-
+    std::wstring line = (cursorPosition.y < lines.size()) ? lines[cursorPosition.y]->getString().toWideString() : L"";
+    
     if (line.size() == 0) {
-        cursor.setPosition(lines[cursorPosition.y]->getPosition());    // poprawka
+        sf::Vector2f charPos(0, (cursorPosition.y - scrollbar->scroll_value) * font.getLineSpacing(characterSize));
+        cursor.setPosition(charPos);
         return;
     }
-
-    if (cursor_position.x < line.size()) {
+    
+    if (cursor_position.x <= line.size()) {
         sf::Vector2f charPos = lines[cursorPosition.y]->findCharacterPos(cursor_position.x);
-        cursor.setPosition(charPos.x, charPos.y);
+        std::cout << charPos.x << ", " << charPos.y << "\n";
+        cursor.setPosition(charPos);
         return;
     }
-
 
     sf::Vector2f endPos = lines[cursorPosition.y]->findCharacterPos(line.size());
-    cursor.setPosition(endPos.x, endPos.y);
+    cursor.setPosition(endPos);
 
 }
 
@@ -589,14 +590,9 @@ void generateScrollbar() {
         int lines_on_screen = int(window->getSize().y / font.getLineSpacing(characterSize));
         float max_val_on_screen = min_val_on_screen + lines_on_screen;
 
-        std::cout << "min: " << min_val_on_screen << "\n";
-        std::cout << "lines on screen: " << lines_on_screen << "\n";
-        std::cout << "max: " << max_val_on_screen << "\n";
-        
-
         if (cursorPosition.y < min_val_on_screen)
             scrollbar_value = cursorPosition.y;
-        else if (cursorPosition.y > max_val_on_screen - 1)
+        else if (cursorPosition.y >= max_val_on_screen - 1)
             scrollbar_value = cursorPosition.y - int(window->getSize().y / font.getLineSpacing(characterSize) - 1);
         else
             scrollbar_value = scrollbar->scroll_value;
@@ -604,13 +600,11 @@ void generateScrollbar() {
     else
         scrollbar_value = 0;
 
-    std::cout << "val: " << scrollbar_value << "\n\n\n";
-
     sf::Vector2f scrollbar_size(16, window->getSize().y);
     sf::Vector2f scrollbar_position(window->getSize().x-16, 0);
 
     float scrollbar_len = window->getSize().y/font.getLineSpacing(characterSize);
-    float max_value = (lines.empty())? 0 : lines.size()-1;
+    float max_value = (lines.empty())? 0 : lines.size();
 
     scrollbar = new Scrollbar(scrollbar_size, scrollbar_position, 0, max_value, scrollbar_value, scrollbar_len);
     scrollbar->onclick_func = []() {
@@ -715,7 +709,22 @@ int main()
                 }
             }
             
-            if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::V) {
+            if (event.type == sf::Event::KeyPressed && event.key.control & event.key.code == sf::Keyboard::A) {
+                if (selection != nullptr)
+                    delete selection;
+
+                selection = new Selection();
+                selection->start_index = 0;
+                selection->end_index = text.size();
+
+                cursorPosition = getCursorFromIndex(selection->end_index);
+
+                generateScrollbar();
+                linesPositioning();
+                setCursorPosition(cursorPosition);
+
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::V) {
                 // Ctrl + V 
                 int index = getCursorIndex(cursorPosition);
                 
@@ -866,7 +875,7 @@ int main()
                 if (event.text.unicode == 8) {
                     // backspace
                     if (index > 0 && !text.empty()) {
-                        if (selection == nullptr || (selection!=nullptr && selection->start_index == selection->end_index)) {
+                        if (selection == nullptr || selection->start_index == selection->end_index){
                             text.erase(index - 1, 1);
                             index -= 1;
                         }
@@ -880,17 +889,60 @@ int main()
                             selection = nullptr;
                         }
                     }
+
+                    if (!lines.empty()) {
+                        for (auto& t : lines)
+                            delete t;
+                    }
+                    lines.clear();
+
+                    lines = wrap_text(window->getSize().x - 16, text);
+
+                    // Po każdej zmianie kursor wstawiamy po index
+                    cursorPosition = getCursorFromIndex(index);
+
+                    generateScrollbar();
+                    linesPositioning();
+                    setCursorPosition(cursorPosition);
                 }
                 else if (event.text.unicode == 13) {
                     // enter
                     text.insert(index, 1, L'\n');
-                    index += 1;
+                    cursorPosition.x = 0;
+                    cursorPosition.y += 1;
+
+                    if (!lines.empty()) {
+                        for (auto& t : lines)
+                            delete t;
+                    }
+                    lines.clear();
+
+                    lines = wrap_text(window->getSize().x - 16, text);
+
+                    generateScrollbar();
+                    linesPositioning();
+                    setCursorPosition(cursorPosition);
 
                 }
                 else if (event.text.unicode == 9) {
                     // tab
                     text.insert(index, 1, L'\t');
                     index += 1;
+
+                    if (!lines.empty()) {
+                        for (auto& t : lines)
+                            delete t;
+                    }
+                    lines.clear();
+
+                    lines = wrap_text(window->getSize().x - 16, text);
+
+                    // Po każdej zmianie kursor wstawiamy po index
+                    cursorPosition = getCursorFromIndex(index);
+
+                    generateScrollbar();
+                    linesPositioning();
+                    setCursorPosition(cursorPosition);
 
                 }
                 else {
@@ -909,23 +961,25 @@ int main()
 
                         text.insert(index, 1, character);
                         index += 1;
+
+                        if (!lines.empty()) {
+                            for (auto& t : lines)
+                                delete t;
+                        }
+                        lines.clear();
+
+                        lines = wrap_text(window->getSize().x - 16, text);
+
+                        // Po każdej zmianie kursor wstawiamy po index
+                        cursorPosition = getCursorFromIndex(index);
+
+                        generateScrollbar();
+                        linesPositioning();
+                        setCursorPosition(cursorPosition);
                     }
                 }
 
-                if (!lines.empty()) {
-                    for (auto& t : lines)
-                        delete t;
-                }
-                lines.clear();
-
-                lines = wrap_text(window->getSize().x - 16, text);
-
-                // Po każdej zmianie kursor wstawiamy po index
-                cursorPosition = getCursorFromIndex(index);
                 
-                generateScrollbar();
-                linesPositioning();
-                setCursorPosition(cursorPosition);
 
 
             }
