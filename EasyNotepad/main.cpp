@@ -726,7 +726,17 @@ int main()
             }
             else if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::V) {
                 // Ctrl + V 
+
                 int index = getCursorIndex(cursorPosition);
+
+                if (selection != nullptr && selection->start_index != selection->end_index) {
+                    text.erase(std::min(selection->start_index, selection->end_index), std::abs(selection->end_index - selection->start_index));
+                    int index = std::min(selection->start_index, selection->end_index);
+                    delete selection;
+                    selection = nullptr;
+                }
+
+                
                 
                 std::wstring clip_text = sf::Clipboard::getString().toWideString();
                 while (clip_text.find(L"\r\n") != std::wstring::npos) {

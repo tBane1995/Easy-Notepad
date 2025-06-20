@@ -8,7 +8,7 @@
 - [Licencja](#licencja)
 
 ## Opis
-**Easy Notepad** to prosty edytor tekstu. Edytor ten obsługuje szerokie znaki (tj. ą, ć, ó, ź itp.), a także znaki tabulacji. Edytor pozwala zaznaczać tekst, a obsługuje skróty klawiaturowe takie jak **Ctrl+C**, **Ctrl+V** i **Ctrl+X**. Edytor potrafi obsłużyć wiele linii tekstu dziękiz paskowi przewijania (scrollbar). Niestety w chwili obecnej nie można zapisywać tekstu jako plik. Ta funkcjonalność zostanie dodane w najbliższym czasie. 
+**Easy Notepad** to prosty edytor tekstu. Edytor ten obsługuje szerokie znaki (tj. ą, ć, ó, ź itp.), a także znaki tabulacji. Edytor pozwala zaznaczać tekst oraz obsługuje skróty klawiaturowe takie jak **Ctrl+C**, **Ctrl+V**, **Ctrl+X** i **Ctrl+A**. Edytor potrafi obsłużyć wiele linii tekstu dziękiz paskowi przewijania (scrollbar). Niestety w chwili obecnej nie można zapisywać tekstu jako plik. Ta funkcjonalność zostanie dodana w najbliższym czasie. 
 
 ## Zrzuty ekranu
 ![Zrzut ekranu](screenshots/01.png)
