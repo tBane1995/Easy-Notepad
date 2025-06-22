@@ -252,7 +252,7 @@ void setCursorPosition(sf::Vector2i cursor_position) {
     
     if (cursor_position.x <= line.size()) {
         sf::Vector2f charPos = lines[cursorPosition.y]->findCharacterPos(cursor_position.x);
-        std::cout << charPos.x << ", " << charPos.y << "\n";
+        //std::cout << charPos.x << ", " << charPos.y << "\n";
         cursor.setPosition(charPos);
         return;
     }
@@ -496,7 +496,7 @@ void generateScrollbar() {
 
     float scrollbar_value;
 
-    std::cout << "cur: " << cursorPosition.y << "\n";
+    //std::cout << "cur: " << cursorPosition.y << "\n";
 
     if (scrollbar != nullptr) {
 
