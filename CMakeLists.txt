@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(EasyNotepad VERSION 0.5)
+project(EasyNotepad VERSION 1.0)
 
 add_executable(${PROJECT_NAME} EasyNotepad/main.cpp)
 
@@ -7,6 +7,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     EasyNotepad/window.hpp
     EasyNotepad/SFML_intro.hpp
     EasyNotepad/mouse.hpp
+    EasyNotepad/text_wrapper.hpp
     EasyNotepad/elementGUI.hpp
     EasyNotepad/scrollbar.hpp
 )
