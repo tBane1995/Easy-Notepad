@@ -460,25 +460,27 @@ void setCursorLeftWithShift() {
         return;
     }
         
+    if (cursorPosition.x > 0 || cursorPosition.y > 0) {
+        int index = getCursorIndex(cursorPosition) - 1;
 
-    int index = getCursorIndex(cursorPosition) - 1;
+        if (selection == nullptr) {
+            selection = new Selection();
+            selection->start_index = index + 1;
+            selection->end_index = index;
 
-    if (selection == nullptr) {
-        selection = new Selection();
-        selection->start_index = index + 1;
-        selection->end_index = index;
-
-    }
-    else {
-        selection->end_index = index;
-
-        if (selection->end_index == selection->start_index) {
-            delete selection;
-            selection = nullptr;
         }
-    }
+        else {
+            selection->end_index = index;
 
-    setCursorPosition(getCursorFromIndex(index));
+            if (selection->end_index == selection->start_index) {
+                delete selection;
+                selection = nullptr;
+            }
+        }
+
+        setCursorPosition(getCursorFromIndex(index));
+    }
+    
    
 }
 
