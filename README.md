@@ -19,30 +19,30 @@
 ## Instalacja
 1. Pobierz i zainstaluje Visual Studio 2022
 2. Pobierz i zainstaluje CMake
-2. Pobierz bibliotekę SFML i umieść ją w katalogu `C:\SFML-2.6.2`.
-3. Otwórz **Wiersz poleceń (cmd)**.
-4. Przejdź do katalogu projektu:
+3. Pobierz bibliotekę SFML 2.6.2 (https://www.sfml-dev.org/) i umieść ją w katalogu `C:\SFML-2.6.2`.
+4. Otwórz **Wiersz poleceń (cmd)**.
+5. Przejdź do katalogu projektu:
 `
 cd ..\..\Easy Notepad
 `
-5. Utwórz folder **build**:
+6. Utwórz folder **build**:
 `
 mkdir build
 `
-6. Wejdź do folderu **build**:
+7. Wejdź do folderu **build**:
 `
 cd build
 `
-7. Uruchom konfigurację projektu za pomocą **CMake**:
+8. Uruchom konfigurację projektu za pomocą **CMake**:
 `
 cmake ..
 `
-8. Zbuduj projekt:
+9. Zbuduj projekt:
 `
 cmake --build .
 `
 
-9. Plik wykonywalny znajdziesz w **build/Debug** lub **build/Release**
+10. Plik wykonywalny znajdziesz w **build/Debug** lub **build/Release**
 
 ## Technologie
 Program stworzono w języku C++ z wykorzystaniem biblioteki SFML 2.6.2.  
